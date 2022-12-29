@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Harrie Jeopardy</title>
+
+  <script src="lib/jquery-3.6.2.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    $( document ).ready(function() {
+        var current_question;
+        $.get('datajeo.txt', function(data) {
+          var lines = data.split('\n');
+          var current = "";
+          var num_categories = 0;
+          var j = 0; //for setting the points fields
+          var q_count_row = 0;
+          var q_count_col = 0;
+          var isQuestion = true;
+          $.each(lines, function(index, line) {
+            if($.trim(line)=='Category'){
+              current = 'Category';
+            }else if($.trim(line)=='Points'){
+              current = 'Points';
+            }else if($.trim(line)=='Questions'){
+              current = 'Questions';
+            }
+            if(current=='Category' && $.trim(line)!='Category'){
+              num_categories++;
+              $('#category_names').append('<th>'+line+'</th>');
+            }
+            if(current=='Points' && $.trim(line)!='Points'){
+              var new_tr = $('#jeopardy_table').append('<tr class="row_'+$.trim(line)+'"></tr>');
+              for (var i=0; i<num_categories; i++){
+                $('.row_'+$.trim(line)).append('<td id="data_'+j+'_'+i+'" class="question_point question_done"><a href="#display_questions" rel="modal:open">'+$.trim(line)+'</a></tr>');
+              }
+              j++;
+            }
+            if(current=='Questions' && $.trim(line)!='Questions'){
+              if(isQuestion){
+                //currenlty on the question
+                $('#data_'+q_count_col+'_'+q_count_row).append('<div class="question">'+$.trim(line)+'</div>');
+                isQuestion=false;
+              }else{
+                //currently on the answer
+                $('#data_'+q_count_col+'_'+q_count_row).append('<div class="answer">'+$.trim(line)+'</div>');
+                isQuestion=true;
+                q_count_col++;
+              }
+              if(q_count_col==j){
+                q_count_col=0;
+                q_count_row++;
+              }
+            }
+          });
+        });
+
+        $( "#jeopardy_table" ).on( "click",".question_point", function() {
+            var question_picked = $(this).find(".question").text();
+            current_question = $(this).attr("id");
+            var answer_picked = $(this).find(".answer").text();
+            $( ".question_show" ).html(question_picked);
+            $( ".answer_show" ).hide();
+            $( ".correct" ).css("opacity",0.3);
+            $( ".correct" ).css("color","black");
+            $( ".answer_show" ).html(answer_picked);
+        });
+
+        $( "#display_questions" ).on( "click",".correct", function() {
+            $( ".correct" ).css("opacity",1);
+            $( ".correct" ).css("color","green");
+            $( ".answer_show" ).show(500);
+            $( "#"+current_question ).removeClass('question_point');
+        });
+
+        $( ".team_points_table" ).on( "click",".add_points", function() {
+            var current_point = parseInt($(this).parent().find(".current_points").text());
+            current_point+=25;
+            $(this).parent().find(".current_points").text(current_point);
+        });
+
+        $( ".team_points_table" ).on( "click",".remove_points", function() {
+            var current_point = parseInt($(this).parent().find(".current_points").text());
+            current_point-=25;
+            $(this).parent().find(".current_points").text(current_point);
+        });
+    });
+    
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap');
+
+    body{
+      font-family: 'Hanken Grotesk', sans-serif;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    td, th {
+      border: 1px solid #dddddd;
+      text-align: left;
+      padding: 8px;
+    }
+
+    tr:nth-child(even) {
+      background-color: #dddddd;
+    }
+
+    th {
+      background-color: #333333;
+      color: white;
+    }
+
+    #category_names{
+      font-size: 2.6vw;
+    }
+
+    #category_names th{
+      text-align: center;
+      width: 20%;
+    }
+
+    .team_points_table{
+      font-size: 2.2vw;
+    }
+
+    .team_points_table a{
+      text-decoration: none;
+    }
+
+    .team_points_table .add_points{
+      color: green;
+    }
+
+    .team_points_table .remove_points{
+      color: red;
+    }
+
+    .question, .answer{
+      display: none;
+    }
+
+    .question_done {
+      text-align: center;
+      padding: 20px;
+    }
+    .question_done a {
+        text-decoration: line-through;
+        color: black;
+        font-size: 2.6vw;
+    }
+
+    .question_done.question_point a{
+        text-decoration: none !important;
+    }
+
+    .answer_show{
+      display: none;
+    }
+    .modal{
+      font-size: 3vw;
+      width: 100%;
+      max-width: 100%;
+      min-height: 80vh;
+      text-align: center;
+      padding-top: 15vh;
+    }
+    .player_answer{
+      margin-top: 9vw;
+      position: relative;
+    }
+
+    .player_answer .wrong{
+      position: absolute;
+      left: 0;
+      text-decoration: none;
+      opacity: 0.3;
+    }
+
+    .player_answer .correct{
+      position: absolute;
+      right: 0;
+      text-decoration: none;
+      opacity: 0.3;
+    }
+  </style>
+</head>
+<body>
+  <table id="jeopardy_table">
+    <tr id="category_names">
+      
+    </tr>
+    
+  </table>
+  <div class="team_points">
+      <h2>Team Points</h2>
+      <table class="team_points_table">
+          <tr>
+            <td>Team A</td>
+            <td><a class="remove_points" href="#">-</a><span class="current_points">0</span><a class="add_points" href="#">+</a></td>
+            <td>Team C</td>
+            <td><a class="remove_points" href="#">-</a><span class="current_points">0</span><a class="add_points" href="#">+</a></td>
+            <td>Team E</td>
+            <td><a class="remove_points" href="#">-</a><span class="current_points">0</span><a class="add_points" href="#">+</a></td>
+          </tr>
+          <tr>
+            <td>Team B</td>
+            <td><a class="remove_points" href="#">-</a><span class="current_points">0</span><a class="add_points" href="#">+</a></td>
+            <td>Team D</td>
+            <td><a class="remove_points" href="#">-</a><span class="current_points">0</span><a class="add_points" href="#">+</a></td>
+            <td>Team F</td>
+            <td><a class="remove_points" href="#">-</a><span class="current_points">0</span><a class="add_points" href="#">+</a></td>
+          </tr>
+      </table>
+  </div>
+  <div id="display_questions" class="modal">
+    <p class="question_show"></p>
+    <p class="answer_show"></p>
+    <div class="player_answer">
+      <a class="wrong" href="#" rel="modal:close">Wrong</a>
+      <a class="correct">Correct!</a>
+    </div>
+    
+  </div>
+</body>
+</html>
